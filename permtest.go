@@ -56,7 +56,7 @@ func WriteFile(path string) error {
 // Directories are tested by writing a temporary hidden file into them. This
 // file will be removed immediately after the test.
 func WriteDir(path string) error {
-	fh, err := ioutil.TempFile(path, ".writetest-")
+	fh, err := ioutil.TempFile(path, ".permtest-")
 	if err != nil {
 		if os.IsPermission(err) {
 			return fmt.Errorf("%s: permission denied", path)
