@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 )
 
-// IsWritable determines if it is possible to write to the file or directory
-// indicated by <path>. Special files like pipes or devices will return an
-// error.
-func IsWritable(path string) error {
+// Write determines if it is possible to write to the file or directory
+// indicated by <path>. Special files like pipes, sockets, and devices will
+// return an error.
+func Write(path string) error {
 	fi, err := os.Stat(path)
 	if err != nil {
 		if os.IsPermission(err) {
