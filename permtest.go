@@ -16,7 +16,12 @@ func Write(path string) error {
 		if os.IsPermission(err) {
 			return fmt.Errorf("%s: permission denied", path)
 		}
-		return IsWritable(filepath.Dir(path))
+
+		if os.IsNotExist(err) {
+			return Write(filepath.Dir(path))
+		}
+
+		return err
 	}
 
 	switch {
