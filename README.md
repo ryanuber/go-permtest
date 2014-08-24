@@ -1,4 +1,4 @@
-# go-permtest
+# go-permtest [![Build Status](https://travis-ci.org/ryanuber/go-permtest.svg)](https://travis-ci.org/ryanuber/go-permtest)
 
 permtest is a Go library providing os-generic tests for basic file permissions.
 This can be useful for testing a user's ability to create files and directories
