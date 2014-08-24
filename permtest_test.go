@@ -33,35 +33,35 @@ func mkTestFile(prefix string, perm os.FileMode, t *testing.T) string {
 	return f.Name()
 }
 
-func TestPermtest_Write(t *testing.T) {
-	// Write should handle directories properly
+func TestPermtest_WriteDir(t *testing.T) {
 	path1 := mkTestDir("", 0700, t)
 	defer os.Remove(path1)
 
 	path2 := mkTestDir("", 0000, t)
 	defer os.Remove(path2)
 
-	if _, err := Write(path1); err != nil {
+	if _, err := WriteDir(path1); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	if _, err := Write(path2); err == nil {
+	if _, err := WriteDir(path2); err == nil {
 		t.Fatalf("expected permission error")
 	}
 
-	// Write should handle files properly
-	path3 := mkTestFile("", 0600, t)
-	defer os.Remove(path1)
+	path3 := mkTestDir("", 0700, t)
+	path4 := mkTestDir(path3, 0000, t)
+	defer os.RemoveAll(path3)
 
-	path4 := mkTestFile("", 0000, t)
-	defer os.Remove(path2)
-
-	if _, err := Write(path3); err != nil {
+	if _, err := WriteDir(path3); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	if _, err := Write(path4); err == nil {
+	last, err := WriteDir(path4)
+	if err == nil {
 		t.Fatalf("expected permission error")
+	}
+	if last != path4 {
+		t.Fatalf("bad: %s", last)
 	}
 }
 
@@ -72,10 +72,6 @@ func TestPermtest_WriteFile(t *testing.T) {
 	path2 := mkTestFile("", 0000, t)
 	defer os.Remove(path2)
 
-	dir := mkTestDir("", 0700, t)
-	path3 := filepath.Join(dir, "test_file")
-	path4 := filepath.Join(dir, "subdir", "test_file")
-
 	if _, err := WriteFile(path1); err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -84,29 +80,29 @@ func TestPermtest_WriteFile(t *testing.T) {
 		t.Fatalf("expected permission error")
 	}
 
+	path3 := mkTestFile("", 0600, t)
+	defer os.Remove(path3)
+
+	path4 := mkTestFile("", 0000, t)
+	defer os.Remove(path4)
+
+	dir := mkTestDir("", 0700, t)
+	path5 := filepath.Join(dir, "test_file")
+	path6 := filepath.Join(dir, "subdir", "test_file")
+
 	if _, err := WriteFile(path3); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	if _, err := WriteFile(path4); err == nil {
-		t.Fatalf("expected nonexistent dir error")
+		t.Fatalf("expected permission error")
 	}
-}
 
-func TestPermtest_WriteDir(t *testing.T) {
-	d1 := mkTestDir("", 0700, t)
-	d2 := mkTestDir(d1, 0000, t)
-	defer os.RemoveAll(d1)
-
-	if _, err := WriteDir(d1); err != nil {
+	if _, err := WriteFile(path5); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	last, err := WriteDir(d2)
-	if err == nil {
-		t.Fatalf("expected permission error")
-	}
-	if last != d2 {
-		t.Fatalf("bad: %s", last)
+	if _, err := WriteFile(path6); err == nil {
+		t.Fatalf("expected nonexistent dir error")
 	}
 }
