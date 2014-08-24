@@ -17,7 +17,7 @@ the `permtest.WriteFile()` method.
 
 Example:
 
-```
+```go
 package main
 
 import (
