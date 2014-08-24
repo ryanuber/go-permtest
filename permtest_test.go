@@ -3,6 +3,7 @@ package permtest
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -71,12 +72,24 @@ func TestPermtest_WriteFile(t *testing.T) {
 	path2 := mkTestFile("", 0000, t)
 	defer os.Remove(path2)
 
+	dir := mkTestDir("", 0700, t)
+	path3 := filepath.Join(dir, "test_file")
+	path4 := filepath.Join(dir, "subdir", "test_file")
+
 	if _, err := WriteFile(path1); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	if _, err := WriteFile(path2); err == nil {
 		t.Fatalf("expected permission error")
+	}
+
+	if _, err := WriteFile(path3); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if _, err := WriteFile(path4); err == nil {
+		t.Fatalf("expected nonexistent dir error")
 	}
 }
 
