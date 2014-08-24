@@ -7,6 +7,11 @@ import (
 	"path/filepath"
 )
 
+const (
+	ErrDenied = "%s: permission denied"
+	ErrIsDir  = "%s: is a directory"
+)
+
 // WriteFile tests if the file given is writable. The intent is to determine
 // your ability to do an os.Create() on the given path.
 func WriteFile(path string) (string, error) {
@@ -30,7 +35,8 @@ func WriteDir(path string) (string, error) {
 func writable(path string, isFile bool) (string, error) {
 	fi, err := os.Stat(path)
 	if err != nil {
-		if os.IsNotExist(err) {
+		switch {
+		case os.IsNotExist(err):
 			// If the path didn't exist, and we are testing for file
 			// permissions, try the immediate parent dir only.
 			if isFile {
@@ -39,15 +45,18 @@ func writable(path string, isFile bool) (string, error) {
 			// If we are looking for a directory, then traverse the structure
 			// until a writable dir or error is encountered.
 			return writable(filepath.Dir(path), false)
+		case os.IsPermission(err):
+			return path, fmt.Errorf(ErrDenied, path)
+		default:
+			return path, err
 		}
-		return path, err
 	}
 
 	if fi.Mode().IsDir() {
 		// If we are looking for a file but found a directory, this can't be
 		// right, so throw an error.
 		if isFile {
-			return path, fmt.Errorf("%s: is a directory", path)
+			return path, fmt.Errorf(ErrIsDir, path)
 		}
 		return path, writeTempFile(path)
 	}
@@ -65,6 +74,9 @@ func writable(path string, isFile bool) (string, error) {
 func fileCanWrite(path string) error {
 	fh, err := os.OpenFile(path, os.O_APPEND, 0666)
 	if err != nil {
+		if os.IsPermission(err) {
+			return fmt.Errorf(ErrDenied, path)
+		}
 		return err
 	}
 	defer fh.Close()
@@ -79,6 +91,9 @@ func fileCanWrite(path string) error {
 func writeTempFile(dir string) error {
 	fh, err := ioutil.TempFile(dir, ".permtest-")
 	if err != nil {
+		if os.IsPermission(err) {
+			return fmt.Errorf(ErrDenied, dir)
+		}
 		return err
 	}
 	defer fh.Close()
