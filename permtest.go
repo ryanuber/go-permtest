@@ -10,8 +10,7 @@ import (
 const errDenied string = "%s: permission denied"
 
 // Write determines if it is possible to write to the file or directory
-// indicated by <path>. Special files like pipes, sockets, and devices will
-// return an error.
+// indicated by <path>.
 //
 // This function returns two values: The last path which was write-tested, and
 // an error (or nil). Since the function recurses, having the last tested path
@@ -30,24 +29,23 @@ func Write(path string) (string, error) {
 		}
 	}
 
-	switch {
-	case fi.Mode().IsRegular():
-		return WriteFile(path)
-	case fi.Mode().IsDir():
+	if fi.IsDir() {
 		return WriteDir(path)
-	default:
-		return path, fmt.Errorf("%s: not a file or directory", path)
 	}
+
+	return WriteFile(path)
 }
 
 // WriteFile determines if a file is able to be written to by attempting to open
-// it for writing. If the file does not exist, an error will be thrown.
+// it for writing. If the file does not exist, then its parent directory
+// is tested for write capability by the current user.
 //
-// This function errors on non-existent files because it would be too ambiguous
-// to only know that it was possible, if parent directories were first created,
-// to create a new file called <path>. Instead, we will assume here that the
-// file already exists, and that the user just wants to know if they are able
-// to write to it.
+// This method will return an error if one of two conditions are met:
+// 1. The file exists and is not writable
+// 2. The file does not exist and its parent directory is not writable
+//
+// The intent is that after testing with this method, a call to os.Create()
+// would be made to open or create the file and write some data to it.
 func WriteFile(path string) (string, error) {
 	fh, err := os.OpenFile(path, os.O_APPEND, 0666)
 	if err != nil {
